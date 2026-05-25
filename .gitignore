@@ -1,0 +1,13 @@
+.env
+.venv
+__pycache__/
+*.pyc
+node_modules/
+dist/
+build/
+.DS_Store
+backend/resume_ranker.db
+*.log
+backend/data/*.csv
+backend/data/*.zip
+backend/data/resumes/
