@@ -1,33 +1,16 @@
 import re
 from functools import lru_cache
 
-import spacy
-from nltk.corpus import stopwords
-from nltk.tokenize import sent_tokenize
-
 from app.services.bias import remove_bias_signals
 
 
-try:
-    STOPWORDS = set(stopwords.words("english"))
-except LookupError:
-    import nltk
-
-    nltk.download("stopwords", quiet=True)
-    nltk.download("punkt", quiet=True)
-    nltk.download("punkt_tab", quiet=True)
-    STOPWORDS = set(stopwords.words("english"))
-
-
-@lru_cache
-def load_spacy():
-    try:
-        nlp = spacy.load("en_core_web_sm", disable=["ner"])
-    except OSError:
-        nlp = spacy.blank("en")
-    if "sentencizer" not in nlp.pipe_names:
-        nlp.add_pipe("sentencizer")
-    return nlp
+STOPWORDS = {
+    "a", "an", "and", "are", "as", "at", "be", "by", "for",
+    "from", "has", "have", "he", "her", "his", "i", "in",
+    "is", "it", "its", "me", "my", "of", "on", "or", "our",
+    "she", "that", "the", "their", "them", "they", "this",
+    "to", "was", "we", "were", "will", "with", "you", "your",
+}
 
 
 def clean_noise(text: str) -> str:
@@ -39,23 +22,28 @@ def clean_noise(text: str) -> str:
     return text.strip()
 
 
+def split_sentences(text: str) -> list[str]:
+    sentences = re.split(r"(?<=[.!?])\s+", text.strip())
+    return [sentence.strip() for sentence in sentences if sentence.strip()]
+
+
+@lru_cache
+def load_spacy():
+    return None
+
+
 def preprocess_text(text: str) -> dict:
     normalized = clean_noise(text).lower()
-    nlp = load_spacy()
-    doc = nlp(normalized)
-    tokens = []
-    for token in doc:
-        if token.is_space or token.is_punct:
-            continue
-        value = token.lemma_.strip() if token.lemma_ else token.text.strip()
-        if len(value) < 2 or value in STOPWORDS:
-            continue
-        tokens.append(value)
 
-    try:
-        sentences = sent_tokenize(text)
-    except LookupError:
-        sentences = [part.strip() for part in re.split(r"[.!?]\s+", text) if part.strip()]
+    words = re.findall(r"[A-Za-z0-9+#.]+", normalized)
+
+    tokens = [
+        word
+        for word in words
+        if len(word) >= 2 and word not in STOPWORDS
+    ]
+
+    sentences = split_sentences(text)
 
     return {
         "clean_text": " ".join(tokens),

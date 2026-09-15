@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     sentence_model: str = "sentence-transformers/all-MiniLM-L6-v2"
     max_upload_mb: int = Field(default=20, ge=1, le=100)
-    enable_heavy_models: bool = True
+    enable_heavy_models: bool = False
 
     class Config:
         env_file = ".env"
